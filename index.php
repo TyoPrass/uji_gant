@@ -88,10 +88,27 @@ if (isset($_GET['delete'])) {
          <link href="assets/css/vendor/fixedHeader.bootstrap5.css" rel="stylesheet" type="text/css" />
          <link href="assets/css/vendor/fixedColumns.bootstrap5.css" rel="stylesheet" type="text/css" />
          <!-- third party css end -->
- 
+
+         <link rel="stylesheet" href="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.css">
          <!-- App css -->
          <link href="assets/css/icons.min.css" rel="stylesheet" type="text/css" />
          <link href="assets/css/app.min.css" rel="stylesheet" type="text/css" id="app-style"/>
+
+         <style>
+  
+        #gantt_here {
+            width: 100%;
+            height: 500px;
+            background: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .card {
+            margin-bottom: 10px;
+        }
+        .navbar {
+            margin-bottom: 20px;
+        }
+    </style>
  
      </head>
  
@@ -649,8 +666,8 @@ if (isset($_GET['delete'])) {
                                                     <input type="date" class="form-control" id="tanggal" name="tanggal" value="<?php echo htmlspecialchars($edit_data['tanggal']); ?>" required>
                                                 </div>
                                                 <div class="mb-3">
-                                                    <label for="gant_json" class="form-label">Gantt JSON</label>
-                                                    <textarea class="form-control" id="gant_json" name="gant_json" rows="5" required><?php echo htmlspecialchars($edit_data['gant_json']); ?></textarea>
+                                                <label for="tanggal" class="form-label">Gantt</label>    
+                                                <div id="gantt_here"></div>
                                                 </div>
                                                 <button type="submit" class="btn btn-primary">Update</button>
                                                 <a href="index.php" class="btn btn-secondary">Cancel</a>
@@ -668,8 +685,8 @@ if (isset($_GET['delete'])) {
                                                     <input type="date" class="form-control" id="tanggal" name="tanggal" required>
                                                 </div>
                                                 <div class="mb-3">
-                                                    <label for="gant_json" class="form-label">Gantt JSON</label>
-                                                    <textarea class="form-control" id="gant_json" name="gant_json" rows="5" required></textarea>
+                                                <label for="tanggal" class="form-label">Gantt</label>    
+                                                <div id="gantt_here"></div>
                                                 </div>
                                                 <button type="submit" class="btn btn-primary">Insert</button>
                                                 <a href="index.php" class="btn btn-secondary">Cancel</a>
@@ -863,6 +880,7 @@ if (isset($_GET['delete'])) {
  
  
          <!-- bundle -->
+
          <script src="assets/js/vendor.min.js"></script>
          <script src="assets/js/app.min.js"></script>
  
@@ -884,6 +902,11 @@ if (isset($_GET['delete'])) {
  
          <!-- demo app -->
          <script src="assets/js/pages/demo.datatable-init.js"></script>
+
+         <script src="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.js"></script>
+         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+         <script src="gant.js"></script>
+
          <!-- end demo js-->
  
      </body>
