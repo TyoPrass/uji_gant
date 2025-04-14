@@ -1,7 +1,9 @@
 $(document).ready(function () {
     gantt.config.date_format = "%Y-%m-%d";
 
-    gantt.init("gantt_here");
+    document.addEventListener("DOMContentLoaded", function() {
+        gantt.init("gantt_here");  // ganti "gantt_here" dengan ID container anda
+    });
 
     // Ambil data dari server
     $.getJSON("action.php", function (data) {
