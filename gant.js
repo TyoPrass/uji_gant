@@ -4,7 +4,7 @@ $(document).ready(function () {
     gantt.init("gantt_here");
 
     // Ambil data dari server
-    $.getJSON("data.php", function (data) {
+    $.getJSON("action.php", function (data) {
         gantt.parse({ data: data });
         updateTaskCards(data);
     });
@@ -12,7 +12,7 @@ $(document).ready(function () {
     // Tambah data baru
     gantt.attachEvent("onAfterTaskAdd", function (id, task) {
         $.ajax({
-            url: "data.php",
+            url: "action.php",
             type: "POST",
             contentType: "application/json",
             data: JSON.stringify({
@@ -38,7 +38,7 @@ $(document).ready(function () {
     // Update data
     gantt.attachEvent("onAfterTaskUpdate", function (id, task) {
         $.ajax({
-            url: "data.php",
+            url: "action.php",
             type: "POST",
             contentType: "application/json",
             data: JSON.stringify({
@@ -60,7 +60,7 @@ $(document).ready(function () {
     // Hapus data   
     gantt.attachEvent("onAfterTaskDelete", function (id) {
         $.ajax({
-            url: "data.php",
+            url: "action.php",
             type: "POST",
             contentType: "application/json",
             data: JSON.stringify({
