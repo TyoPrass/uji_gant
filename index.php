@@ -1,8 +1,71 @@
 <?php
-include_once('Database/koneksi.php');
-include('action.php')
+include_once("Database/koneksi.php");
+// Function to handle insert, update, and delete operations
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['submit'])) {
+        // Insert operation
+        $id_customer = $_POST['id_customer'];
+        $tanggal = $_POST['tanggal'];
+
+        $sql = "INSERT INTO gant_customer (id_customer, tanggal) VALUES (?, ?)";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("ss", $id_customer, $tanggal);
+
+        if ($stmt->execute()) {
+            $_SESSION['message'] = "Record inserted successfully!";
+            $_SESSION['message_type'] = "success";
+        } else {
+            $_SESSION['message'] = "Error inserting record: " . $conn->error;
+            $_SESSION['message_type'] = "danger";
+        }
+        $stmt->close();
+        header("Location: index.php");
+        exit();
+    } elseif (isset($_POST['update'])) {
+        // Update operation
+        $id_gant = $_POST['id_gant'];
+        $id_customer = $_POST['id_customer'];
+        $tanggal = $_POST['tanggal'];
+
+        $sql = "UPDATE gant_customer SET id_customer = ?, tanggal = ? WHERE id_gant = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("ssi", $id_customer, $tanggal, $id_gant);
+
+        if ($stmt->execute()) {
+            $_SESSION['message'] = "Record updated successfully!";
+            $_SESSION['message_type'] = "success";
+        } else {
+            $_SESSION['message'] = "Error updating record: " . $conn->error;
+            $_SESSION['message_type'] = "danger";
+        }
+        $stmt->close();
+        header("Location: index.php");
+        exit();
+    }
+}
+
+if (isset($_GET['delete'])) {
+    // Delete operation
+    $id_gant = $_GET['delete'];
+
+    $sql = "DELETE FROM gant_customer WHERE id_gant = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $id_gant);
+
+    if ($stmt->execute()) {
+        $_SESSION['message'] = "Record deleted successfully!";
+        $_SESSION['message_type'] = "success";
+    } else {
+        $_SESSION['message'] = "Error deleting record: " . $conn->error;
+        $_SESSION['message_type'] = "danger";
+    }
+    $stmt->close();
+    header("Location: index.php");
+    exit();
+}
 
 ?>
+
 
 <!DOCTYPE html>
  <html lang="en">
@@ -25,14 +88,15 @@ include('action.php')
          <link href="assets/css/vendor/fixedHeader.bootstrap5.css" rel="stylesheet" type="text/css" />
          <link href="assets/css/vendor/fixedColumns.bootstrap5.css" rel="stylesheet" type="text/css" />
          <!-- third party css end -->
+          <!-- Buat Gant Chart -->
+          <link rel="stylesheet" href="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.css">
 
-         <link rel="stylesheet" href="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.css">
+ 
          <!-- App css -->
          <link href="assets/css/icons.min.css" rel="stylesheet" type="text/css" />
          <link href="assets/css/app.min.css" rel="stylesheet" type="text/css" id="app-style"/>
 
          <style>
-  
         #gantt_here {
             width: 100%;
             height: 500px;
@@ -591,7 +655,7 @@ include('action.php')
                                             </div>
                                         <?php elseif (isset($_GET['edit'])): ?>
                                             <!-- Edit Form -->
-                                            <form action="action.php" method="post">
+                                            <form action="index.php" method="post">
                                                 <input type="hidden" name="id_gant" value="<?php echo htmlspecialchars($edit_data['id_gant']); ?>">
                                                 <input type="hidden" name="update" value="true">
                                                 <div class="mb-3">
@@ -603,15 +667,15 @@ include('action.php')
                                                     <input type="date" class="form-control" id="tanggal" name="tanggal" value="<?php echo htmlspecialchars($edit_data['tanggal']); ?>" required>
                                                 </div>
                                                 <div class="mb-3">
-                                                <label for="tanggal" class="form-label">Gantt</label>    
-                                                <div id="gantt_here"></div>
+                                                    <label for="gant_json" class="form-label">Gantt JSON</label>
+                                                    <div id="gantt_here"></div>
                                                 </div>
                                                 <button type="submit" class="btn btn-primary">Update</button>
                                                 <a href="index.php" class="btn btn-secondary">Cancel</a>
                                             </form>
                                         <?php elseif (isset($_GET['insert'])): ?>
                                             <!-- Insert Form -->
-                                            <form action="action.php" method="post">
+                                            <form action="index.php" method="post">
                                                 <input type="hidden" name="submit" value="true">
                                                 <div class="mb-3">
                                                     <label for="id_customer" class="form-label">Nama Customer</label>
@@ -622,8 +686,8 @@ include('action.php')
                                                     <input type="date" class="form-control" id="tanggal" name="tanggal" required>
                                                 </div>
                                                 <div class="mb-3">
-                                                <label for="tanggal" class="form-label">Gantt</label>    
-                                                <div id="gantt_here"></div>
+                                                    <label for="gant_json" class="form-label">Gantt JSON</label>
+                                                    <div id="gantt_here"></div>
                                                 </div>
                                                 <button type="submit" class="btn btn-primary">Insert</button>
                                                 <a href="index.php" class="btn btn-secondary">Cancel</a>
@@ -814,10 +878,9 @@ include('action.php')
  
          <div class="rightbar-overlay"></div>
          <!-- /End-bar -->
- 
+         <script src="gant.js"></script>
  
          <!-- bundle -->
-
          <script src="assets/js/vendor.min.js"></script>
          <script src="assets/js/app.min.js"></script>
  
@@ -839,12 +902,93 @@ include('action.php')
  
          <!-- demo app -->
          <script src="assets/js/pages/demo.datatable-init.js"></script>
-
-         <script src="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.js"></script>
-         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-         <script src="gant.js"></script>
-
          <!-- end demo js-->
+
+         <!-- Ini buat akses gant chart -->
+         <script src="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.js"></script>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script>
+                $(document).ready(function () {
+                gantt.config.date_format = "%Y-%m-%d";
+
+                gantt.init("gantt_here");
+
+                // Ambil data dari server
+                $.getJSON("data.php", function (data) {
+                    gantt.parse({ data: data });
+                    updateTaskCards(data);
+                });
+
+                // Tambah data baru
+                gantt.attachEvent("onAfterTaskAdd", function (id, task) {
+                    $.ajax({
+                        url: "data.php",
+                        type: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify({
+                            action: "create",
+                            text: task.text,
+                            start_date: gantt.date.date_to_str("%Y-%m-%d")(task.start_date),
+                            duration: task.duration,
+                            progress: task.progress,
+                            parent: task.parent
+                        }),
+                        success: function (response) {
+                            console.log("Server response:", response); // Tambahkan logging
+                            let res = JSON.parse(response);
+                            gantt.changeTaskId(id, res.id);
+                            updateTaskCards(gantt.serialize().data);
+                        },
+                        error: function (_xhr, _status, error) {
+                            console.error("Error:", error); // Tambahkan logging untuk error
+                        }
+                    });
+                });
+
+                // Update data
+                gantt.attachEvent("onAfterTaskUpdate", function (id, task) {
+                    $.ajax({
+                        url: "data.php",
+                        type: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify({
+                            action: "update",
+                            id: id,
+                            text: task.text,
+                            start_date: gantt.date.date_to_str("%Y-%m-%d")(task.start_date),
+                            duration: task.duration,
+                            progress: task.progress,
+                            parent: task.parent
+                        }),
+                        success: function () {
+                            console.log("Task updated");
+                            updateTaskCards(gantt.serialize().data);
+                        }
+                    });
+                });
+
+                // Hapus data   
+                gantt.attachEvent("onAfterTaskDelete", function (id) {
+                    $.ajax({
+                        url: "data.php",
+                        type: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify({
+                            action: "delete",
+                            id: id
+                        }),
+                        success: function () {
+                            console.log("Task deleted");
+                            updateTaskCards(gantt.serialize().data);
+                        }
+                    });
+                });
+            });
+        </script>
+
+
+
+
  
      </body>
  

@@ -1,12 +1,10 @@
 $(document).ready(function () {
     gantt.config.date_format = "%Y-%m-%d";
 
-    document.addEventListener("DOMContentLoaded", function() {
-        gantt.init("gantt_here");  // ganti "gantt_here" dengan ID container anda
-    });
+    gantt.init("gantt_here");
 
     // Ambil data dari server
-    $.getJSON("action.php", function (data) {
+    $.getJSON("data.php", function (data) {
         gantt.parse({ data: data });
         updateTaskCards(data);
     });
@@ -14,7 +12,7 @@ $(document).ready(function () {
     // Tambah data baru
     gantt.attachEvent("onAfterTaskAdd", function (id, task) {
         $.ajax({
-            url: "action.php",
+            url: "data.php",
             type: "POST",
             contentType: "application/json",
             data: JSON.stringify({
@@ -40,7 +38,7 @@ $(document).ready(function () {
     // Update data
     gantt.attachEvent("onAfterTaskUpdate", function (id, task) {
         $.ajax({
-            url: "action.php",
+            url: "data.php",
             type: "POST",
             contentType: "application/json",
             data: JSON.stringify({
@@ -62,7 +60,7 @@ $(document).ready(function () {
     // Hapus data   
     gantt.attachEvent("onAfterTaskDelete", function (id) {
         $.ajax({
-            url: "action.php",
+            url: "data.php",
             type: "POST",
             contentType: "application/json",
             data: JSON.stringify({
