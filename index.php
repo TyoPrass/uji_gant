@@ -1,69 +1,6 @@
 <?php
 include_once("Database/koneksi.php");
-// Function to handle insert, update, and delete operations
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['submit'])) {
-        // Insert operation
-        $id_customer = $_POST['id_customer'];
-        $tanggal = $_POST['tanggal'];
-
-        $sql = "INSERT INTO gant_customer (id_customer, tanggal) VALUES (?, ?)";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ss", $id_customer, $tanggal);
-
-        if ($stmt->execute()) {
-            $_SESSION['message'] = "Record inserted successfully!";
-            $_SESSION['message_type'] = "success";
-        } else {
-            $_SESSION['message'] = "Error inserting record: " . $conn->error;
-            $_SESSION['message_type'] = "danger";
-        }
-        $stmt->close();
-        header("Location: index.php");
-        exit();
-    } elseif (isset($_POST['update'])) {
-        // Update operation
-        $id_gant = $_POST['id_gant'];
-        $id_customer = $_POST['id_customer'];
-        $tanggal = $_POST['tanggal'];
-
-        $sql = "UPDATE gant_customer SET id_customer = ?, tanggal = ? WHERE id_gant = ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ssi", $id_customer, $tanggal, $id_gant);
-
-        if ($stmt->execute()) {
-            $_SESSION['message'] = "Record updated successfully!";
-            $_SESSION['message_type'] = "success";
-        } else {
-            $_SESSION['message'] = "Error updating record: " . $conn->error;
-            $_SESSION['message_type'] = "danger";
-        }
-        $stmt->close();
-        header("Location: index.php");
-        exit();
-    }
-}
-
-if (isset($_GET['delete'])) {
-    // Delete operation
-    $id_gant = $_GET['delete'];
-
-    $sql = "DELETE FROM gant_customer WHERE id_gant = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $id_gant);
-
-    if ($stmt->execute()) {
-        $_SESSION['message'] = "Record deleted successfully!";
-        $_SESSION['message_type'] = "success";
-    } else {
-        $_SESSION['message'] = "Error deleting record: " . $conn->error;
-        $_SESSION['message_type'] = "danger";
-    }
-    $stmt->close();
-    header("Location: index.php");
-    exit();
-}
-
+// include('action.php');
 ?>
 
 
@@ -638,7 +575,7 @@ if (isset($_GET['delete'])) {
                                                                 <td>: <?php echo htmlspecialchars($detail_data['tanggal']); ?></td>
                                                             </tr>
                                                             <tr>
-                                                                <th>Gantt JSON</th>
+                                                                <th>Project Report</th>
                                                                 <td>: <pre><?php echo htmlspecialchars($detail_data['gant_json']); ?></pre></td>
                                                             </tr>
                                                         </table>
@@ -655,7 +592,7 @@ if (isset($_GET['delete'])) {
                                             </div>
                                         <?php elseif (isset($_GET['edit'])): ?>
                                             <!-- Edit Form -->
-                                            <form action="index.php" method="post">
+                                            <form action="action.php" method="post">
                                                 <input type="hidden" name="id_gant" value="<?php echo htmlspecialchars($edit_data['id_gant']); ?>">
                                                 <input type="hidden" name="update" value="true">
                                                 <div class="mb-3">
@@ -675,7 +612,7 @@ if (isset($_GET['delete'])) {
                                             </form>
                                         <?php elseif (isset($_GET['insert'])): ?>
                                             <!-- Insert Form -->
-                                            <form action="index.php" method="post">
+                                            <form action="action.php" method="post">
                                                 <input type="hidden" name="submit" value="true">
                                                 <div class="mb-3">
                                                     <label for="id_customer" class="form-label">Nama Customer</label>
@@ -686,7 +623,7 @@ if (isset($_GET['delete'])) {
                                                     <input type="date" class="form-control" id="tanggal" name="tanggal" required>
                                                 </div>
                                                 <div class="mb-3">
-                                                    <label for="gant_json" class="form-label">Gantt JSON</label>
+                                                    <label for="gant_json" class="form-label">Project Report</label>
                                                     <div id="gantt_here"></div>
                                                 </div>
                                                 <button type="submit" class="btn btn-primary">Insert</button>
@@ -696,7 +633,7 @@ if (isset($_GET['delete'])) {
                                             <!-- Display Records Table -->
                                             <div class="mt-3 mb-3">
                                                 <a href="index.php?insert=true" class="btn btn-success">
-                                                    <i class="mdi mdi-plus"></i> Insert New Gantt Chart
+                                                    <i class="mdi mdi-plus"></i> Insert New Project
                                                 </a>
                                             </div>
                                             <div class="table-responsive">
@@ -914,7 +851,7 @@ if (isset($_GET['delete'])) {
                 gantt.init("gantt_here");
 
                 // Ambil data dari server
-                $.getJSON("index.php", function (data) {
+                $.getJSON("action.php", function (data) {
                     gantt.parse({ data: data });
                     updateTaskCards(data);
                 });
@@ -922,7 +859,7 @@ if (isset($_GET['delete'])) {
                 // Tambah data baru
                 gantt.attachEvent("onAfterTaskAdd", function (id, task) {
                     $.ajax({
-                        url: "index.php",
+                        url: "action.php",
                         type: "POST",
                         contentType: "application/json",
                         data: JSON.stringify({
@@ -948,7 +885,7 @@ if (isset($_GET['delete'])) {
                 // Update data
                 gantt.attachEvent("onAfterTaskUpdate", function (id, task) {
                     $.ajax({
-                        url: "index.php",
+                        url: "action.php",
                         type: "POST",
                         contentType: "application/json",
                         data: JSON.stringify({
@@ -970,7 +907,7 @@ if (isset($_GET['delete'])) {
                 // Hapus data   
                 gantt.attachEvent("onAfterTaskDelete", function (id) {
                     $.ajax({
-                        url: "index.php",
+                        url: "action.php",
                         type: "POST",
                         contentType: "application/json",
                         data: JSON.stringify({
