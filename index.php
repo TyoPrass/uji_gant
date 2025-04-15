@@ -615,17 +615,30 @@ if (isset($_GET['delete'])) {
                                             <?php unset($_SESSION['message']); unset($_SESSION['message_type']); ?>
                                         <?php endif; ?>
 
-                                        <?php if (isset($_GET['detail'])): ?>
+                                        <?php if (isset($_GET['detail'])): 
+                                            // Fetch the record to be viewed
+                                            $id_gant = $_GET['detail'];
+                                            $detail_sql = "SELECT * FROM gant_customer WHERE id_gant = ?";
+                                            $detail_stmt = $conn->prepare($detail_sql);
+                                            $detail_stmt->bind_param("i", $id_gant);
+                                            $detail_stmt->execute();
+                                            $detail_result = $detail_stmt->get_result();
+                                            $detail_data = $detail_result->fetch_assoc();
+                                            $detail_stmt->close();
+                                            
+                                            if (!$detail_data) {
+                                                $_SESSION['message'] = "Record not found!";
+                                                $_SESSION['message_type'] = "danger";
+                                                header("Location: index.php");
+                                                exit();
+                                            }
+                                        ?>
                                             <!-- Detail View -->
                                             <div class="row">
                                                 <div class="col-md-6">
                                                     <div class="mb-3">
                                                         <h6 class="text-uppercase fw-bold">Gantt Chart Details</h6>
                                                         <table class="table table-sm">
-                                                            <tr>
-                                                                <th width="130">ID Gantt</th>
-                                                                <td>: <?php echo htmlspecialchars($detail_data['id_gant']); ?></td>
-                                                            </tr>
                                                             <tr>
                                                                 <th>Nama Customer</th>
                                                                 <td>: <?php echo htmlspecialchars($detail_data['id_customer']); ?></td>
@@ -636,7 +649,6 @@ if (isset($_GET['delete'])) {
                                                             </tr>
                                                             <tr>
                                                                 <th>Gantt JSON</th>
-                                                                <td>: <pre><?php echo htmlspecialchars($detail_data['gant_json']); ?></pre></td>
                                                             </tr>
                                                         </table>
                                                     </div>
