@@ -914,7 +914,7 @@ if (isset($_GET['delete'])) {
                 gantt.init("gantt_here");
 
                 // Ambil data dari server
-                $.getJSON("data.php", function (data) {
+                $.getJSON("index.php", function (data) {
                     gantt.parse({ data: data });
                     updateTaskCards(data);
                 });
@@ -922,7 +922,7 @@ if (isset($_GET['delete'])) {
                 // Tambah data baru
                 gantt.attachEvent("onAfterTaskAdd", function (id, task) {
                     $.ajax({
-                        url: "data.php",
+                        url: "index.php",
                         type: "POST",
                         contentType: "application/json",
                         data: JSON.stringify({
@@ -948,7 +948,7 @@ if (isset($_GET['delete'])) {
                 // Update data
                 gantt.attachEvent("onAfterTaskUpdate", function (id, task) {
                     $.ajax({
-                        url: "data.php",
+                        url: "index.php",
                         type: "POST",
                         contentType: "application/json",
                         data: JSON.stringify({
@@ -970,7 +970,7 @@ if (isset($_GET['delete'])) {
                 // Hapus data   
                 gantt.attachEvent("onAfterTaskDelete", function (id) {
                     $.ajax({
-                        url: "data.php",
+                        url: "index.php",
                         type: "POST",
                         contentType: "application/json",
                         data: JSON.stringify({
