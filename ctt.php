@@ -7,6 +7,8 @@
 
     #case baru 15/04/2025
     data bisa terisi akan tetapi data lama juga akan ditampilkan ketika akan menginputkan data baru
+
+    #Buat menyimpan datanya bersamaan dengan menyimpan insert data agar tidak terjadi crash antaran dengan 
     
 -->
 
