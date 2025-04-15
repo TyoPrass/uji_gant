@@ -1,6 +1,69 @@
 <?php
 include_once("Database/koneksi.php");
-// include('action.php');
+// Function to handle insert, update, and delete operations
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['submit'])) {
+        // Insert operation
+        $id_customer = $_POST['id_customer'];
+        $tanggal = $_POST['tanggal'];
+
+        $sql = "INSERT INTO gant_customer (id_customer, tanggal) VALUES (?, ?)";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("ss", $id_customer, $tanggal);
+
+        if ($stmt->execute()) {
+            $_SESSION['message'] = "Record inserted successfully!";
+            $_SESSION['message_type'] = "success";
+        } else {
+            $_SESSION['message'] = "Error inserting record: " . $conn->error;
+            $_SESSION['message_type'] = "danger";
+        }
+        $stmt->close();
+        header("Location: index.php");
+        exit();
+    } elseif (isset($_POST['update'])) {
+        // Update operation
+        $id_gant = $_POST['id_gant'];
+        $id_customer = $_POST['id_customer'];
+        $tanggal = $_POST['tanggal'];
+
+        $sql = "UPDATE gant_customer SET id_customer = ?, tanggal = ? WHERE id_gant = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("ssi", $id_customer, $tanggal, $id_gant);
+
+        if ($stmt->execute()) {
+            $_SESSION['message'] = "Record updated successfully!";
+            $_SESSION['message_type'] = "success";
+        } else {
+            $_SESSION['message'] = "Error updating record: " . $conn->error;
+            $_SESSION['message_type'] = "danger";
+        }
+        $stmt->close();
+        header("Location: index.php");
+        exit();
+    }
+}
+
+if (isset($_GET['delete'])) {
+    // Delete operation
+    $id_gant = $_GET['delete'];
+
+    $sql = "DELETE FROM gant_customer WHERE id_gant = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $id_gant);
+
+    if ($stmt->execute()) {
+        $_SESSION['message'] = "Record deleted successfully!";
+        $_SESSION['message_type'] = "success";
+    } else {
+        $_SESSION['message'] = "Error deleting record: " . $conn->error;
+        $_SESSION['message_type'] = "danger";
+    }
+    $stmt->close();
+    header("Location: index.php");
+    exit();
+}
+
 ?>
 
 
@@ -25,29 +88,26 @@ include_once("Database/koneksi.php");
          <link href="assets/css/vendor/fixedHeader.bootstrap5.css" rel="stylesheet" type="text/css" />
          <link href="assets/css/vendor/fixedColumns.bootstrap5.css" rel="stylesheet" type="text/css" />
          <!-- third party css end -->
-          <!-- Buat Gant Chart -->
-          <link rel="stylesheet" href="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.css">
-
  
          <!-- App css -->
          <link href="assets/css/icons.min.css" rel="stylesheet" type="text/css" />
          <link href="assets/css/app.min.css" rel="stylesheet" type="text/css" id="app-style"/>
-
-         <style>
-        #gantt_here {
-            width: 100%;
-            height: 500px;
-            background: white;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        .card {
-            margin-bottom: 10px;
-        }
-        .navbar {
-            margin-bottom: 20px;
-        }
-    </style>
- 
+    <!-- Gantt Chart CSS -->
+        <link rel="stylesheet" href="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.css">
+        <style>
+            #gantt_here {
+                width: 100%;
+                height: 500px;
+                background: white;
+                box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            }
+            .card {
+                margin-bottom: 10px;
+            }
+            .navbar {
+                margin-bottom: 20px;
+            }
+        </style>
      </head>
  
      <body class="loading" data-layout-color="light" data-leftbar-theme="dark" data-layout-mode="fluid" data-rightbar-onstart="true">
@@ -575,7 +635,7 @@ include_once("Database/koneksi.php");
                                                                 <td>: <?php echo htmlspecialchars($detail_data['tanggal']); ?></td>
                                                             </tr>
                                                             <tr>
-                                                                <th>Project Report</th>
+                                                                <th>Gantt JSON</th>
                                                                 <td>: <pre><?php echo htmlspecialchars($detail_data['gant_json']); ?></pre></td>
                                                             </tr>
                                                         </table>
@@ -590,11 +650,28 @@ include_once("Database/koneksi.php");
                                                     <i class="mdi mdi-pencil"></i> Edit
                                                 </a>
                                             </div>
-                                        <?php elseif (isset($_GET['edit'])): ?>
-                                            <!-- Edit Form -->
-                                            <form action="action.php" method="post">
-                                                <input type="hidden" name="id_gant" value="<?php echo htmlspecialchars($edit_data['id_gant']); ?>">
-                                                <input type="hidden" name="update" value="true">
+                                        <?php elseif (isset($_GET['edit'])): 
+                                            // Fetch the record to be edited
+                                            $id_gant = $_GET['edit'];
+                                            $edit_sql = "SELECT * FROM gant_customer WHERE id_gant = ?";
+                                            $edit_stmt = $conn->prepare($edit_sql);
+                                            $edit_stmt->bind_param("i", $id_gant);
+                                            $edit_stmt->execute();
+                                            $edit_result = $edit_stmt->get_result();
+                                            $edit_data = $edit_result->fetch_assoc();
+                                            $edit_stmt->close();
+                                            
+                                            if (!$edit_data) {
+                                                $_SESSION['message'] = "Record not found!";
+                                                $_SESSION['message_type'] = "danger";
+                                                header("Location: index.php");
+                                                exit();
+                                            }
+                                        ?>
+                                                                                    <!-- Edit Form -->
+                                                                                    <form action="index.php" method="post">
+                                                                                        <input type="hidden" name="id_gant" value="<?php echo htmlspecialchars($edit_data['id_gant']); ?>">
+                                                                                        <input type="hidden" name="update" value="true">
                                                 <div class="mb-3">
                                                     <label for="id_customer" class="form-label">Nama Customer</label>
                                                     <input type="text" class="form-control" id="id_customer" name="id_customer" value="<?php echo htmlspecialchars($edit_data['id_customer']); ?>" required>
@@ -606,13 +683,13 @@ include_once("Database/koneksi.php");
                                                 <div class="mb-3">
                                                     <label for="gant_json" class="form-label">Gantt JSON</label>
                                                     <div id="gantt_here"></div>
-                                                </div>
+                                                    </div>
                                                 <button type="submit" class="btn btn-primary">Update</button>
                                                 <a href="index.php" class="btn btn-secondary">Cancel</a>
                                             </form>
                                         <?php elseif (isset($_GET['insert'])): ?>
                                             <!-- Insert Form -->
-                                            <form action="action.php" method="post">
+                                            <form action="index.php" method="post">
                                                 <input type="hidden" name="submit" value="true">
                                                 <div class="mb-3">
                                                     <label for="id_customer" class="form-label">Nama Customer</label>
@@ -623,9 +700,9 @@ include_once("Database/koneksi.php");
                                                     <input type="date" class="form-control" id="tanggal" name="tanggal" required>
                                                 </div>
                                                 <div class="mb-3">
-                                                    <label for="gant_json" class="form-label">Project Report</label>
+                                                    <label for="gant_json" class="form-label">Gantt JSON</label>
                                                     <div id="gantt_here"></div>
-                                                </div>
+                                                    </div>
                                                 <button type="submit" class="btn btn-primary">Insert</button>
                                                 <a href="index.php" class="btn btn-secondary">Cancel</a>
                                             </form>
@@ -633,7 +710,7 @@ include_once("Database/koneksi.php");
                                             <!-- Display Records Table -->
                                             <div class="mt-3 mb-3">
                                                 <a href="index.php?insert=true" class="btn btn-success">
-                                                    <i class="mdi mdi-plus"></i> Insert New Project
+                                                    <i class="mdi mdi-plus"></i> Insert New Gantt Chart
                                                 </a>
                                             </div>
                                             <div class="table-responsive">
@@ -815,7 +892,7 @@ include_once("Database/koneksi.php");
  
          <div class="rightbar-overlay"></div>
          <!-- /End-bar -->
-         <script src="gant.js"></script>
+ 
  
          <!-- bundle -->
          <script src="assets/js/vendor.min.js"></script>
@@ -840,18 +917,14 @@ include_once("Database/koneksi.php");
          <!-- demo app -->
          <script src="assets/js/pages/demo.datatable-init.js"></script>
          <!-- end demo js-->
-
-         <!-- Ini buat akses gant chart -->
-         <script src="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.js"></script>
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <script>
-                $(document).ready(function () {
+         <script>
+            $(document).ready(function () {
+            if ($("#gantt_here").length > 0) {
                 gantt.config.date_format = "%Y-%m-%d";
-
                 gantt.init("gantt_here");
 
                 // Ambil data dari server
-                $.getJSON("action.php", function (data) {
+                $.getJSON("action.php?id_gant=1", function (data) { // Ganti id_gant=1 sesuai kebutuhan
                     gantt.parse({ data: data });
                     updateTaskCards(data);
                 });
@@ -859,11 +932,12 @@ include_once("Database/koneksi.php");
                 // Tambah data baru
                 gantt.attachEvent("onAfterTaskAdd", function (id, task) {
                     $.ajax({
-                        url: "action.php",
+                        url: "index.php",
                         type: "POST",
                         contentType: "application/json",
                         data: JSON.stringify({
                             action: "create",
+                            id_gant: 1, // Ganti sesuai kebutuhan
                             text: task.text,
                             start_date: gantt.date.date_to_str("%Y-%m-%d")(task.start_date),
                             duration: task.duration,
@@ -871,13 +945,13 @@ include_once("Database/koneksi.php");
                             parent: task.parent
                         }),
                         success: function (response) {
-                            console.log("Server response:", response); // Tambahkan logging
+                            console.log("Server response:", response);
                             let res = JSON.parse(response);
                             gantt.changeTaskId(id, res.id);
                             updateTaskCards(gantt.serialize().data);
                         },
                         error: function (_xhr, _status, error) {
-                            console.error("Error:", error); // Tambahkan logging untuk error
+                            console.error("Error:", error);
                         }
                     });
                 });
@@ -885,11 +959,12 @@ include_once("Database/koneksi.php");
                 // Update data
                 gantt.attachEvent("onAfterTaskUpdate", function (id, task) {
                     $.ajax({
-                        url: "action.php",
+                        url: "index.php",
                         type: "POST",
                         contentType: "application/json",
                         data: JSON.stringify({
                             action: "update",
+                            id_gant: 1, // Ganti sesuai kebutuhan
                             id: id,
                             text: task.text,
                             start_date: gantt.date.date_to_str("%Y-%m-%d")(task.start_date),
@@ -904,29 +979,33 @@ include_once("Database/koneksi.php");
                     });
                 });
 
-                // Hapus data   
+                // Hapus data
                 gantt.attachEvent("onAfterTaskDelete", function (id) {
                     $.ajax({
-                        url: "action.php",
+                        url: "index.php",
                         type: "POST",
                         contentType: "application/json",
                         data: JSON.stringify({
                             action: "delete",
+                            id_gant: 1, // Ganti sesuai kebutuhan
                             id: id
                         }),
                         success: function () {
                             console.log("Task deleted");
                             updateTaskCards(gantt.serialize().data);
+                        },
+                        error: function (_xhr, _status, error) {
+                            console.error("Error:", error);
                         }
                     });
                 });
-            });
+            }
+        });
+
         </script>
-
-
-
-
- 
+        <script src="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.js"></script>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        
      </body>
  
  <!-- Mirrored from coderthemes.com/hyper/saas/tables-datatable.html by HTTrack Website Copier/3.x [XR&CO'2014], Fri, 29 Jul 2022 10:22:01 GMT -->
