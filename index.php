@@ -800,7 +800,17 @@ if (isset($_GET['delete'])) {
                                                     <input type="hidden" name="update" value="true">
                                                 <div class="mb-3">
                                                     <label for="id_customer" class="form-label">Nama Customer</label>
-                                                    <input type="text" class="form-control" id="id_customer" name="id_customer" value="<?php echo htmlspecialchars($edit_data['id_customer']); ?>" required>
+                                                    <select class="form-control" id="id_customer" name="id_customer" required>
+                                                        <option value="">-- Select Customer --</option>
+                                                        <?php
+                                                        $customer_sql = "SELECT id_customer, nama_customer FROM customer ORDER BY nama_customer ASC";
+                                                        $customer_result = $conn->query($customer_sql);
+                                                        while ($customer = $customer_result->fetch_assoc()): ?>
+                                                            <option value="<?php echo $customer['id_customer']; ?>" <?php echo ($customer['id_customer'] == $edit_data['id_customer']) ? 'selected' : ''; ?>>
+                                                                <?php echo htmlspecialchars($customer['nama_customer']); ?>
+                                                            </option>
+                                                        <?php endwhile; ?>
+                                                    </select>
                                                 </div>
                                                 <div class="mb-3">
                                                     <label for="tanggal" class="form-label">Date</label>
@@ -820,7 +830,17 @@ if (isset($_GET['delete'])) {
                                                 <input type="hidden" name="task_data_json" id="task_data_json" value="[]">
                                                 <div class="mb-3">
                                                     <label for="id_customer" class="form-label">Nama Customer</label>
-                                                    <input type="text" class="form-control" id="id_customer" name="id_customer" required>
+                                                    <select class="form-control" id="id_customer" name="id_customer" required>
+                                                        <option value="">-- Select Customer --</option>
+                                                        <?php
+                                                        $customer_sql = "SELECT id_customer, nama_customer FROM customer ORDER BY nama_customer ASC";
+                                                        $customer_result = $conn->query($customer_sql);
+                                                        while ($customer = $customer_result->fetch_assoc()): ?>
+                                                            <option value="<?php echo $customer['id_customer']; ?>">
+                                                                <?php echo htmlspecialchars($customer['nama_customer']); ?>
+                                                            </option>
+                                                        <?php endwhile; ?>
+                                                    </select>
                                                 </div>
                                                 <div class="mb-3">
                                                     <label for="tanggal" class="form-label">Date</label>
@@ -852,13 +872,26 @@ if (isset($_GET['delete'])) {
                                                     </thead>
                                                     <tbody>
                                                         <?php
-                                                        $sql = "SELECT * FROM gant_customer ORDER BY id_gant ASC";
+                                                        $sql = "SELECT * FROM gant_customer ORDER BY id_gant DESC";
                                                         $result = $conn->query($sql);
                                                         $no = 1;
                                                         while ($row = $result->fetch_assoc()): ?>
                                                             <tr>
                                                                 <td><?php echo $no++; ?></td>
-                                                                <td><?php echo htmlspecialchars($row['id_customer']); ?></td>
+                                                                <td>
+                                                                    <?php 
+                                                                        // Get customer name using customer ID
+                                                                        $customer_id = $row['id_customer'];
+                                                                        $customer_sql = "SELECT nama_customer FROM customer WHERE id_customer = ?";
+                                                                        $customer_stmt = $conn->prepare($customer_sql);
+                                                                        $customer_stmt->bind_param("s", $customer_id);
+                                                                        $customer_stmt->execute();
+                                                                        $customer_result = $customer_stmt->get_result();
+                                                                        $customer_data = $customer_result->fetch_assoc();
+                                                                        echo $customer_data ? htmlspecialchars($customer_data['nama_customer']) : htmlspecialchars($customer_id);
+                                                                        $customer_stmt->close();
+                                                                    ?>
+                                                                </td>
                                                                 <td><?php echo htmlspecialchars($row['tanggal']); ?></td>
                                                                 <td>
                                                                     <div class="btn-group">
