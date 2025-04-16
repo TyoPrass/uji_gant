@@ -802,7 +802,6 @@ if (isset($_GET['delete'])) {
                                                                         <th>Start Date</th>
                                                                         <th>Duration (days)</th>
                                                                         <th>Progress</th>
-                                                                        <th>Parent Task</th>
                                                                     </tr>
                                                                 </thead>
                                                                 <tbody>
@@ -836,7 +835,6 @@ if (isset($_GET['delete'])) {
                                                                                 </div>
                                                                             </div>
                                                                         </td>
-                                                                        <td><?php echo htmlspecialchars($parent_name); ?></td>
                                                                     </tr>
                                                                     <?php endforeach; ?>
                                                                     <?php if (empty($tasks)): ?>
@@ -973,7 +971,7 @@ if (isset($_GET['delete'])) {
                                                 <table id="basic-datatable" class="table table-striped dt-responsive nowrap w-100">
                                                     <thead>
                                                         <tr>
-                                                            <th>No</th>
+                                                    <th>No</th>
                                                             <th>Customer ID</th>
                                                             <th>Date</th>
                                                             <th>Actions</th>
