@@ -11,70 +11,73 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['CONTENT_TYPE']) && 
     $request = json_decode(file_get_contents("php://input"), true);
     
     if (isset($request['action'])) {
+        $id_gant = $request['id_gant'];
+        $sql = "SELECT task_data FROM gant_customer WHERE id_gant = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $id_gant);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $stmt->close();
+        
+        $tasks = [];
+        if ($row && !empty($row['task_data'])) {
+            $tasks = json_decode($row['task_data'], true) ?: [];
+        }
+        
         switch ($request['action']) {
-            case 'create':
             case 'update':
-            case 'delete':
-                // Get the current task_data JSON for the given id_gant
-                $id_gant = $request['id_gant'];
-                $sql = "SELECT task_data FROM gant_customer WHERE id_gant = ?";
-                $stmt = $conn->prepare($sql);
-                $stmt->bind_param("i", $id_gant);
-                $stmt->execute();
-                $result = $stmt->get_result();
-                $row = $result->fetch_assoc();
-                $stmt->close();
+                $taskId = $request['id'];
+                $found = false;
                 
-                $tasks = [];
-                if ($row && !empty($row['task_data'])) {
-                    $tasks = json_decode($row['task_data'], true);
+                // Update existing task or add if it doesn't exist
+                foreach ($tasks as &$task) {
+                    if ($task['id'] == $taskId) {
+                        $task['text'] = $request['text'];
+                        $task['start_date'] = $request['start_date'];
+                        $task['duration'] = $request['duration'];
+                        $task['progress'] = $request['progress'];
+                        $task['parent'] = $request['parent'];
+                        $found = true;
+                        break;
+                    }
                 }
                 
-                // Modify the tasks array based on the action
-                if ($request['action'] == 'create') {
+                // If task wasn't found, add it as new
+                if (!$found) {
                     $tasks[] = [
-                        'id' => count($tasks) + 1, // Generate a new ID
+                        'id' => $taskId,
                         'text' => $request['text'],
                         'start_date' => $request['start_date'],
                         'duration' => $request['duration'],
                         'progress' => $request['progress'],
                         'parent' => $request['parent']
                     ];
-                    $response = ['success' => true, 'id' => count($tasks)];
-                } elseif ($request['action'] == 'update') {
-                    foreach ($tasks as &$task) {
-                        if ($task['id'] == $request['id']) {
-                            $task['text'] = $request['text'];
-                            $task['start_date'] = $request['start_date'];
-                            $task['duration'] = $request['duration'];
-                            $task['progress'] = $request['progress'];
-                            $task['parent'] = $request['parent'];
-                            break;
-                        }
-                    }
-                    $response = ['success' => true];
-                } elseif ($request['action'] == 'delete') {
-                    foreach ($tasks as $key => $task) {
-                        if ($task['id'] == $request['id']) {
-                            unset($tasks[$key]);
-                            break;
-                        }
-                    }
-                    $tasks = array_values($tasks); // Reindex array
-                    $response = ['success' => true];
                 }
+                break;
                 
-                // Update the task_data JSON in the database
-                $task_data_json = json_encode($tasks);
-                $sql = "UPDATE gant_customer SET task_data = ? WHERE id_gant = ?";
-                $stmt = $conn->prepare($sql);
-                $stmt->bind_param("si", $task_data_json, $id_gant);
-                $stmt->execute();
-                $stmt->close();
-                
-                echo json_encode($response);
-                exit();
+            case 'delete':
+                $taskId = $request['id'];
+                foreach ($tasks as $key => $task) {
+                    if ($task['id'] == $taskId) {
+                        unset($tasks[$key]);
+                        break;
+                    }
+                }
+                $tasks = array_values($tasks); // Reindex array
+                break;
         }
+        
+        // Update the task_data JSON in the database
+        $task_data_json = json_encode($tasks);
+        $sql = "UPDATE gant_customer SET task_data = ? WHERE id_gant = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("si", $task_data_json, $id_gant);
+        $result = $stmt->execute();
+        $stmt->close();
+        
+        echo json_encode(['success' => $result, 'task_count' => count($tasks)]);
+        exit();
     }
 }
 
@@ -112,10 +115,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param("sss", $id_customer, $tanggal, $task_data);
         
         if ($stmt->execute()) {
-            $_SESSION['message'] = "Record inserted successfully!";
+            $_SESSION['message'] = "Gantt chart created successfully!";
             $_SESSION['message_type'] = "success";
         } else {
-            $_SESSION['message'] = "Error inserting record: " . $conn->error;
+            $_SESSION['message'] = "Error creating Gantt chart: " . $conn->error;
             $_SESSION['message_type'] = "danger";
         }
         $stmt->close();
@@ -143,10 +146,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         if ($stmt->execute()) {
-            $_SESSION['message'] = "Record updated successfully!";
+            $_SESSION['message'] = "Gantt chart updated successfully!";
             $_SESSION['message_type'] = "success";
         } else {
-            $_SESSION['message'] = "Error updating record: " . $conn->error;
+            $_SESSION['message'] = "Error updating Gantt chart: " . $conn->error;
             $_SESSION['message_type'] = "danger";
         }
         $stmt->close();
@@ -164,10 +167,10 @@ if (isset($_GET['delete'])) {
     $stmt->bind_param("i", $id_gant);
     
     if ($stmt->execute()) {
-        $_SESSION['message'] = "Record deleted successfully!";
+        $_SESSION['message'] = "Gantt chart deleted successfully!";
         $_SESSION['message_type'] = "success";
     } else {
-        $_SESSION['message'] = "Error deleting record: " . $conn->error;
+        $_SESSION['message'] = "Error deleting Gantt chart: " . $conn->error;
         $_SESSION['message_type'] = "danger";
     }
     $stmt->close();
@@ -1057,79 +1060,129 @@ if (isset($_GET['delete'])) {
             let currentIdGant = editMode || 'temp';
             
             if (editMode) {
-                // Load existing data for editing
-                $.getJSON("index.php?get_tasks=true&id_gant=" + editMode, function (data) {
-                    tempTasks = data || [];
-                    gantt.parse({ data: tempTasks });
-                });
+            // Load existing data for editing
+            $.getJSON("index.php?get_tasks=true&id_gant=" + editMode, function (data) {
+                tempTasks = data || [];
+                gantt.parse({ data: tempTasks });
+            });
             } else if (insertMode) {
-                // Start with empty chart for insert
-                tempTasks = [];
-                gantt.parse({ data: [] });
+            // Start with empty chart for insert
+            tempTasks = [];
+            gantt.parse({ data: [] });
             }
             
             // Add task
             gantt.attachEvent("onAfterTaskAdd", function (id, task) {
-                // Generate a unique temporary ID
-                const tempId = 'temp_' + new Date().getTime() + '_' + Math.floor(Math.random() * 1000);
-                
-                // Store in our temporary array
-                tempTasks.push({
-                    id: tempId,
+            // Generate a unique temporary ID
+            const tempId = 'temp_' + new Date().getTime() + '_' + Math.floor(Math.random() * 1000);
+            
+            // Store in our temporary array
+            tempTasks.push({
+                id: tempId,
+                text: task.text,
+                start_date: gantt.date.date_to_str("%Y-%m-%d")(task.start_date),
+                duration: task.duration,
+                progress: task.progress,
+                parent: task.parent
+            });
+            
+            // Update hidden form field
+            $("#task_data_json").val(JSON.stringify(tempTasks));
+            
+            // Update gantt chart ID
+            gantt.changeTaskId(id, tempId);
+            });
+            
+            // Update task
+            gantt.attachEvent("onAfterTaskUpdate", function (id, task) {
+            // Update in our temporary array
+            for (let i = 0; i < tempTasks.length; i++) {
+                if (tempTasks[i].id == id) {
+                tempTasks[i] = {
+                    id: id,
                     text: task.text,
                     start_date: gantt.date.date_to_str("%Y-%m-%d")(task.start_date),
                     duration: task.duration,
                     progress: task.progress,
                     parent: task.parent
-                });
-                
-                // Update hidden form field
-                $("#task_data_json").val(JSON.stringify(tempTasks));
-                
-                // Update gantt chart ID
-                gantt.changeTaskId(id, tempId);
-            });
-            
-            // Update task
-            gantt.attachEvent("onAfterTaskUpdate", function (id, task) {
-                // Update in our temporary array
-                for (let i = 0; i < tempTasks.length; i++) {
-                    if (tempTasks[i].id == id) {
-                        tempTasks[i] = {
-                            id: id,
-                            text: task.text,
-                            start_date: gantt.date.date_to_str("%Y-%m-%d")(task.start_date),
-                            duration: task.duration,
-                            progress: task.progress,
-                            parent: task.parent
-                        };
-                        break;
-                    }
+                };
+                break;
                 }
-                
-                // Update hidden form field
-                $("#task_data_json").val(JSON.stringify(tempTasks));
+            }
+            
+            // Update hidden form field immediately
+            $("#task_data_json").val(JSON.stringify(tempTasks));
+            
+            // For edit mode, save changes immediately via AJAX
+            if (editMode) {
+                $.ajax({
+                type: "POST",
+                url: "index.php",
+                contentType: "application/json",
+                data: JSON.stringify({
+                    action: "update",
+                    id_gant: editMode,
+                    id: id,
+                    text: task.text,
+                    start_date: gantt.date.date_to_str("%Y-%m-%d")(task.start_date),
+                    duration: task.duration,
+                    progress: task.progress,
+                    parent: task.parent
+                }),
+                success: function(response) {
+                    console.log("Task updated successfully");
+                },
+                error: function(error) {
+                    console.error("Error updating task:", error);
+                }
+                });
+            }
             });
             
             // Delete task
             gantt.attachEvent("onAfterTaskDelete", function (id) {
+            // Find the task to delete
+            const taskToDelete = tempTasks.find(task => task.id == id);
+            
+            if (taskToDelete) {
                 // Remove from our temporary array
                 tempTasks = tempTasks.filter(task => task.id != id);
                 
                 // Update hidden form field
                 $("#task_data_json").val(JSON.stringify(tempTasks));
+                
+                // For edit mode, delete task immediately via AJAX
+                if (editMode) {
+                $.ajax({
+                    type: "POST",
+                    url: "index.php",
+                    contentType: "application/json",
+                    data: JSON.stringify({
+                    action: "delete",
+                    id_gant: editMode,
+                    id: id
+                    }),
+                    success: function(response) {
+                    console.log("Task deleted successfully");
+                    },
+                    error: function(error) {
+                    console.error("Error deleting task:", error);
+                    }
+                });
+                }
+            }
             });
             
             // Make sure form submission includes task data
             $("form").on("submit", function() {
-                // Ensure task data is included
-                if (!$("#task_data_json").val()) {
-                    $("#task_data_json").val(JSON.stringify(tempTasks));
-                }
-                return true;
+            // Ensure task data is included
+            if (!$("#task_data_json").val()) {
+                $("#task_data_json").val(JSON.stringify(tempTasks));
+            }
+            return true;
             });
         }
-    });
+        });
 
         </script>
         <script src="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.js"></script>
