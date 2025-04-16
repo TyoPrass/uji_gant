@@ -751,31 +751,140 @@ if (isset($_GET['delete'])) {
                                             <div class="row">
                                                 <div class="col-md-6">
                                                     <div class="mb-3">
-                                                        <h6 class="text-uppercase fw-bold">Gantt Chart Details</h6>
-                                                        <table class="table table-sm">
+                                                        <h5 class="text-uppercase fw-bold">Gantt Chart Details</h5>
+                                                        <table class="table table-sm table-bordered">
                                                             <tr>
-                                                                <th>Nama Customer</th>
-                                                                <td>: <?php echo htmlspecialchars($detail_data['id_customer']); ?></td>
+                                                                <th style="width: 35%;">Customer</th>
+                                                                <td>
+                                                                    <?php 
+                                                                        $customer_id = $detail_data['id_customer'];
+                                                                        $customer_sql = "SELECT nama_customer FROM customer WHERE id_customer = ?";
+                                                                        $customer_stmt = $conn->prepare($customer_sql);
+                                                                        $customer_stmt->bind_param("s", $customer_id);
+                                                                        $customer_stmt->execute();
+                                                                        $customer_result = $customer_stmt->get_result();
+                                                                        $customer_data = $customer_result->fetch_assoc();
+                                                                        echo $customer_data ? htmlspecialchars($customer_data['nama_customer']) : htmlspecialchars($customer_id);
+                                                                        $customer_stmt->close();
+                                                                    ?>
+                                                                </td>
                                                             </tr>
                                                             <tr>
                                                                 <th>Date</th>
-                                                                <td>: <?php echo htmlspecialchars($detail_data['tanggal']); ?></td>
+                                                                <td><?php echo date('d F Y', strtotime($detail_data['tanggal'])); ?></td>
                                                             </tr>
                                                             <tr>
-                                                                <th>Gantt JSON</th>
+                                                                <th>Created</th>
+                                                                <td><?php echo date('d M Y H:i', strtotime($detail_data['created_at'] ?? $detail_data['tanggal'])); ?></td>
                                                             </tr>
                                                         </table>
                                                     </div>
                                                 </div>
                                             </div>
+
+                                            <div class="mt-3 mb-4">
+                                                <h5 class="text-uppercase fw-bold">Gantt Chart Visualization</h5>
+                                                <div id="gantt_here" style="height: 500px;"></div>
+                                            </div>
+
+                                            <div class="mt-4">
+                                                <div class="card">
+                                                    <div class="card-header">
+                                                        <h5 class="card-title mb-0">Task List</h5>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div class="table-responsive">
+                                                            <table class="table table-centered table-hover table-bordered">
+                                                                <thead class="table-light">
+                                                                    <tr>
+                                                                        <th>#</th>
+                                                                        <th>Task Name</th>
+                                                                        <th>Start Date</th>
+                                                                        <th>Duration (days)</th>
+                                                                        <th>Progress</th>
+                                                                        <th>Parent Task</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    <?php
+                                                                    $tasks = json_decode($detail_data['task_data'], true) ?: [];
+                                                                    $counter = 1;
+                                                                    foreach ($tasks as $task):
+                                                                        // Get parent task name
+                                                                        $parent_name = '-';
+                                                                        if (!empty($task['parent']) && $task['parent'] != 0) {
+                                                                            foreach ($tasks as $potential_parent) {
+                                                                                if ($potential_parent['id'] == $task['parent']) {
+                                                                                    $parent_name = $potential_parent['text'];
+                                                                                    break;
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    ?>
+                                                                    <tr>
+                                                                        <td><?php echo $counter++; ?></td>
+                                                                        <td><?php echo htmlspecialchars($task['text']); ?></td>
+                                                                        <td><?php echo htmlspecialchars($task['start_date']); ?></td>
+                                                                        <td><?php echo htmlspecialchars($task['duration']); ?></td>
+                                                                        <td>
+                                                                            <div class="progress" style="height: 20px;">
+                                                                                <div class="progress-bar bg-success" role="progressbar" 
+                                                                                     style="width: <?php echo ($task['progress'] * 100); ?>%" 
+                                                                                     aria-valuenow="<?php echo ($task['progress'] * 100); ?>" 
+                                                                                     aria-valuemin="0" aria-valuemax="100">
+                                                                                    <?php echo round($task['progress'] * 100); ?>%
+                                                                                </div>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td><?php echo htmlspecialchars($parent_name); ?></td>
+                                                                    </tr>
+                                                                    <?php endforeach; ?>
+                                                                    <?php if (empty($tasks)): ?>
+                                                                    <tr>
+                                                                        <td colspan="6" class="text-center">No tasks found</td>
+                                                                    </tr>
+                                                                    <?php endif; ?>
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
                                             <div class="mt-4">
                                                 <a href="index.php" class="btn btn-secondary">
-                                                    <i class="mdi mdi-arrow-left"></i> Back
+                                                    <i class="mdi mdi-arrow-left"></i> Back to List
                                                 </a>
                                                 <a href="index.php?edit=<?php echo $detail_data['id_gant']; ?>" class="btn btn-info">
                                                     <i class="mdi mdi-pencil"></i> Edit
                                                 </a>
+                                                <a href="index.php?delete=<?php echo $detail_data['id_gant']; ?>" 
+                                                   class="btn btn-danger"
+                                                   onclick="return confirm('Are you sure you want to delete this Gantt chart?');">
+                                                    <i class="mdi mdi-delete"></i> Delete
+                                                </a>
                                             </div>
+
+                                            <script>
+                                            // Initialize the Gantt chart in read-only mode
+                                            document.addEventListener('DOMContentLoaded', function() {
+                                                if (typeof gantt !== 'undefined') {
+                                                    gantt.config.date_format = "%Y-%m-%d";
+                                                    gantt.config.readonly = true;
+                                                    gantt.init("gantt_here");
+                                                    
+                                                    // Load the tasks
+                                                    fetch("index.php?get_tasks=true&id_gant=<?php echo $detail_data['id_gant']; ?>")
+                                                        .then(response => response.json())
+                                                        .then(data => {
+                                                            gantt.parse({data: data || []});
+                                                        })
+                                                        .catch(error => {
+                                                            console.error("Error loading Gantt data:", error);
+                                                        });
+                                                }
+                                            });
+                                            </script>
                                         <?php elseif (isset($_GET['edit'])): 
                                             // Fetch the record to be edited
                                             $id_gant = $_GET['edit'];
