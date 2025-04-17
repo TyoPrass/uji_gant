@@ -8,5 +8,6 @@
 
     jangan lupa ngerjakan flutter project kampus
     
+    Ternyata data gant chartnya tidak support untuk upload gambar 
 
 -->
